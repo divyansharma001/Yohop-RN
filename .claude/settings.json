@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($word = New-Object -ComObject Word.Application; $word.Visible = $false; $doc = $word.Documents.Open\\(\"c:\\\\yohop-yashika-app\\\\backend.docx\", $false, $true\\); $doc.Content.Text; $doc.Close\\(\\); $word.Quit\\(\\))"
+    ]
+  }
+}
