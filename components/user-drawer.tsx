@@ -77,8 +77,18 @@ export function UserDrawer({
       key: 'social',
       title: 'Social',
       items: [
-        { key: 'friends', label: 'Your Friends', icon: 'people-outline', onPress: noop },
-        { key: 'contacts', label: 'Contacts', icon: 'call-outline', onPress: noop },
+        {
+          key: 'friends',
+          label: 'Your Friends',
+          icon: 'people-outline',
+          onPress: () => router.push('/friends'),
+        },
+        {
+          key: 'contacts',
+          label: 'Contacts',
+          icon: 'call-outline',
+          onPress: () => router.push('/contacts'),
+        },
         {
           key: 'leaderboard',
           label: 'Leaderboard',
@@ -91,8 +101,18 @@ export function UserDrawer({
       key: 'perks',
       title: 'Perks',
       items: [
-        { key: 'rewards', label: 'Your Rewards', icon: 'gift-outline', onPress: noop },
-        { key: 'redeemed', label: 'Redeemed', icon: 'checkmark-done-outline', onPress: noop },
+        {
+          key: 'rewards',
+          label: 'Your Rewards',
+          icon: 'gift-outline',
+          onPress: () => router.push('/rewards'),
+        },
+        {
+          key: 'redeemed',
+          label: 'Redeemed',
+          icon: 'checkmark-done-outline',
+          onPress: () => router.push('/redeemed'),
+        },
         ...(merchantProfile
           ? []
           : [
@@ -108,7 +128,12 @@ export function UserDrawer({
   ];
 
   const bottomItems: DrawerItem[] = [
-    { key: 'settings', label: 'Settings', icon: 'settings-outline', onPress: noop },
+    {
+      key: 'settings',
+      label: 'Settings',
+      icon: 'settings-outline',
+      onPress: () => router.push('/settings'),
+    },
     {
       key: 'logout',
       label: 'Logout',

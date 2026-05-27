@@ -614,16 +614,23 @@ function FeedCard({
           <TouchableOpacity
             style={styles.buyBtn}
             activeOpacity={0.8}
-            onPress={() =>
-              router.push({
-                pathname: '/deal',
-                params:
-                  item.kind === 'deal'
-                    ? { dealId: item.id, merchantId: (item.raw as Deal).merchantId }
-                    : { eventId: item.id },
-              })
-            }>
-            <Text style={styles.buyText}>Buy</Text>
+            onPress={() => {
+              if (item.kind === 'event') {
+                router.push({
+                  pathname: '/event',
+                  params: { id: item.id, title: item.title },
+                });
+              } else {
+                router.push({
+                  pathname: '/deal',
+                  params: {
+                    dealId: item.id,
+                    merchantId: (item.raw as Deal).merchantId,
+                  },
+                });
+              }
+            }}>
+            <Text style={styles.buyText}>{item.kind === 'event' ? 'View' : 'Buy'}</Text>
           </TouchableOpacity>
         </View>
       </View>

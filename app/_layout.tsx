@@ -55,6 +55,17 @@ export default function RootLayout() {
             <Stack.Screen name="favorites" options={{ headerShown: false }} />
             <Stack.Screen name="activity" options={{ headerShown: false }} />
             <Stack.Screen name="leaderboard" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false }} />
+            <Stack.Screen name="redeemed" options={{ headerShown: false }} />
+            <Stack.Screen name="rewards" options={{ headerShown: false }} />
+            <Stack.Screen name="contacts" options={{ headerShown: false }} />
+            <Stack.Screen name="friends" options={{ headerShown: false }} />
+            <Stack.Screen name="deal-published" options={{ headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen name="deal-status" options={{ headerShown: false }} />
+            <Stack.Screen name="event" options={{ headerShown: false }} />
+            <Stack.Screen name="checkin" options={{ headerShown: false }} />
+            <Stack.Screen name="checkin-verify" options={{ headerShown: false }} />
+            <Stack.Screen name="checkin-complete" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
           <StatusBar style="auto" />

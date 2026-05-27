@@ -46,10 +46,16 @@ export function AppDrawer({
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topRow}>
           <Pressable
-            hitSlop={12}
+            hitSlop={16}
             onPress={onClose}
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+            style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.6 }]}>
+            <Ionicons name="arrow-back" size={20} color="#fff" />
+          </Pressable>
+          <Pressable
+            hitSlop={16}
+            onPress={onClose}
+            style={({ pressed }) => [styles.closeBtnRight, pressed && { opacity: 0.6 }]}>
+            <Ionicons name="close" size={22} color="#fff" />
           </Pressable>
         </View>
 
@@ -121,14 +127,31 @@ function DrawerRow({ item, onClose }: { item: DrawerItem; onClose: () => void })
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#000' },
   topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  backBtn: {
-    width: 36,
-    height: 36,
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  closeBtnRight: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   scroll: {
     paddingBottom: 40,

@@ -1,0 +1,527 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+type Tab = 'all' | 'requests' | 'suggested';
+
+type Friend = {
+  id: string;
+  name: string;
+  points?: number;
+  mutuals: number;
+  online?: boolean;
+  venue?: string;
+  avatarColor: string;
+  status: 'friend' | 'request' | 'suggested';
+};
+
+const FRIENDS: Friend[] = [
+  {
+    id: '1',
+    name: 'Marcus Chen',
+    points: 4200,
+    mutuals: 8,
+    online: true,
+    venue: 'At Neon Heights',
+    avatarColor: '#AE80FF',
+    status: 'friend',
+  },
+  {
+    id: '2',
+    name: 'Sasha Grey',
+    points: 3800,
+    mutuals: 5,
+    online: true,
+    venue: 'At The Vault',
+    avatarColor: '#FFB300',
+    status: 'friend',
+  },
+  {
+    id: '3',
+    name: 'Elena Rossi',
+    points: 0,
+    mutuals: 12,
+    avatarColor: '#FF6B6B',
+    status: 'request',
+  },
+  {
+    id: '4',
+    name: 'Daniel Park',
+    points: 0,
+    mutuals: 4,
+    avatarColor: '#C4F27F',
+    status: 'request',
+  },
+  {
+    id: '5',
+    name: 'Julian Kosh',
+    points: 1840,
+    mutuals: 1,
+    avatarColor: '#7AD6FF',
+    status: 'friend',
+  },
+  {
+    id: '6',
+    name: 'Maya Theron',
+    points: 1240,
+    mutuals: 3,
+    avatarColor: '#C4F27F',
+    status: 'friend',
+  },
+  {
+    id: '7',
+    name: 'Ravi Patel',
+    points: 0,
+    mutuals: 6,
+    avatarColor: '#AE80FF',
+    status: 'suggested',
+  },
+  {
+    id: '8',
+    name: 'Nina Iyer',
+    points: 0,
+    mutuals: 2,
+    avatarColor: '#FFB300',
+    status: 'suggested',
+  },
+];
+
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function formatPoints(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K pts`;
+  return `${n} pts`;
+}
+
+export default function FriendsScreen() {
+  const router = useRouter();
+  const [tab, setTab] = useState<Tab>('all');
+  const [query, setQuery] = useState('');
+
+  const friends = FRIENDS.filter((f) => f.status === 'friend');
+  const requests = FRIENDS.filter((f) => f.status === 'request');
+  const suggested = FRIENDS.filter((f) => f.status === 'suggested');
+  const onlineNow = friends.filter((f) => f.online);
+  const allFriends = friends.filter((f) => !f.online);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let list: Friend[] = [];
+    if (tab === 'all') list = friends;
+    if (tab === 'requests') list = requests;
+    if (tab === 'suggested') list = suggested;
+    if (q) list = list.filter((f) => f.name.toLowerCase().includes(q));
+    return list;
+  }, [tab, query, friends, requests, suggested]);
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.topRow}>
+        <TouchableOpacity
+          style={styles.iconBtn}
+          activeOpacity={0.8}
+          onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.topTitle}>Friends</Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.push('/contacts')}>
+          <Text style={styles.addLink}>+ Add</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchWrap}>
+        <Ionicons
+          name="search"
+          size={16}
+          color="rgba(255,255,255,0.5)"
+          style={{ marginLeft: 14 }}
+        />
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search friends..."
+          placeholderTextColor="rgba(255,255,255,0.4)"
+        />
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabsRow}>
+        <TouchableOpacity
+          style={[styles.tab, tab === 'all' && styles.tabActive]}
+          onPress={() => setTab('all')}
+          activeOpacity={0.85}>
+          <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>
+            All ({friends.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, tab === 'requests' && styles.tabActive]}
+          onPress={() => setTab('requests')}
+          activeOpacity={0.85}>
+          <Text
+            style={[styles.tabText, tab === 'requests' && styles.tabTextActive]}>
+            Requests {requests.length > 0 ? requests.length : ''}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, tab === 'suggested' && styles.tabActive]}
+          onPress={() => setTab('suggested')}
+          activeOpacity={0.85}>
+          <Text
+            style={[styles.tabText, tab === 'suggested' && styles.tabTextActive]}>
+            Suggested
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}>
+        {tab === 'all' && !query && onlineNow.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Online Now</Text>
+            <View style={styles.card}>
+              {onlineNow.map((f, idx) => (
+                <View
+                  key={f.id}
+                  style={[
+                    styles.row,
+                    idx === onlineNow.length - 1 && { borderBottomWidth: 0 },
+                  ]}>
+                  <View style={styles.avatarWrap}>
+                    <View
+                      style={[styles.avatar, { backgroundColor: f.avatarColor }]}>
+                      <Text style={styles.avatarText}>{initials(f.name)}</Text>
+                    </View>
+                    <View style={styles.onlineDot} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{f.name}</Text>
+                    <Text style={styles.meta}>{f.venue}</Text>
+                  </View>
+                  <Text style={styles.points}>
+                    {formatPoints(f.points ?? 0)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {tab === 'all' && !query && requests.length > 0 && (
+          <>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Pending Requests</Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setTab('requests')}>
+                <Text style={styles.viewAllText}>View all</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.card}>
+              {requests.slice(0, 1).map((f) => (
+                <View key={f.id} style={[styles.row, { borderBottomWidth: 0 }]}>
+                  <View
+                    style={[styles.avatar, { backgroundColor: f.avatarColor }]}>
+                    <Text style={styles.avatarText}>{initials(f.name)}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{f.name}</Text>
+                    <Text style={styles.meta}>{f.mutuals} mutual friends</Text>
+                  </View>
+                  <TouchableOpacity style={styles.acceptBtn} activeOpacity={0.85}>
+                    <Text style={styles.acceptText}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.ignoreBtn}
+                    activeOpacity={0.85}>
+                    <Text style={styles.ignoreText}>Ignore</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {tab === 'all' && (
+          <>
+            <Text style={styles.sectionTitle}>All Friends</Text>
+            <View style={styles.card}>
+              {(query
+                ? friends.filter((f) =>
+                    f.name.toLowerCase().includes(query.trim().toLowerCase()),
+                  )
+                : allFriends
+              ).map((f, idx, arr) => (
+                <View
+                  key={f.id}
+                  style={[
+                    styles.row,
+                    idx === arr.length - 1 && { borderBottomWidth: 0 },
+                  ]}>
+                  <View
+                    style={[styles.avatar, { backgroundColor: f.avatarColor }]}>
+                    <Text style={styles.avatarText}>{initials(f.name)}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{f.name}</Text>
+                    <Text style={styles.meta}>
+                      {f.mutuals} mutual friend{f.mutuals === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity hitSlop={10}>
+                    <Ionicons
+                      name="ellipsis-vertical"
+                      size={16}
+                      color="rgba(255,255,255,0.4)"
+                    />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {tab === 'requests' && (
+          <View style={styles.card}>
+            {filtered.map((f, idx) => (
+              <View
+                key={f.id}
+                style={[
+                  styles.row,
+                  idx === filtered.length - 1 && { borderBottomWidth: 0 },
+                ]}>
+                <View
+                  style={[styles.avatar, { backgroundColor: f.avatarColor }]}>
+                  <Text style={styles.avatarText}>{initials(f.name)}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{f.name}</Text>
+                  <Text style={styles.meta}>{f.mutuals} mutual friends</Text>
+                </View>
+                <TouchableOpacity style={styles.acceptBtn} activeOpacity={0.85}>
+                  <Text style={styles.acceptText}>Accept</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {tab === 'suggested' && (
+          <View style={styles.card}>
+            {filtered.map((f, idx) => (
+              <View
+                key={f.id}
+                style={[
+                  styles.row,
+                  idx === filtered.length - 1 && { borderBottomWidth: 0 },
+                ]}>
+                <View
+                  style={[styles.avatar, { backgroundColor: f.avatarColor }]}>
+                  <Text style={styles.avatarText}>{initials(f.name)}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{f.name}</Text>
+                  <Text style={styles.meta}>
+                    {f.mutuals} mutual · suggested
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.addBtn} activeOpacity={0.85}>
+                  <Ionicons name="person-add" size={14} color="#000" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {filtered.length === 0 && tab !== 'all' && (
+          <Text style={styles.empty}>Nothing here.</Text>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#000' },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  addLink: { color: '#C4F27F', fontSize: 13, fontWeight: '700' },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 14,
+    backgroundColor: '#141414',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: 10,
+    height: 42,
+    fontSize: 13,
+    color: '#fff',
+  },
+  tabsRow: { paddingHorizontal: 14, gap: 8, paddingBottom: 8 },
+  tab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  tabActive: { backgroundColor: '#C4F27F', borderColor: '#C4F27F' },
+  tabText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  tabTextActive: { color: '#000', fontWeight: '700' },
+  scroll: { paddingHorizontal: 14, paddingBottom: 40 },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 14,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  viewAllText: {
+    color: '#C4F27F',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  card: {
+    backgroundColor: '#141414',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  avatarWrap: { position: 'relative' },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  onlineDot: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#C4F27F',
+    borderWidth: 2,
+    borderColor: '#141414',
+  },
+  name: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  meta: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  points: {
+    color: '#C4F27F',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  acceptBtn: {
+    paddingHorizontal: 12,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#C4F27F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  acceptText: { color: '#000', fontSize: 11, fontWeight: '800' },
+  ignoreBtn: {
+    paddingHorizontal: 12,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ignoreText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  addBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#C4F27F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  empty: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 40,
+  },
+});

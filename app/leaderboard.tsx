@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,24 +10,73 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type HistoryItem = {
-  id: string;
-  venue: string;
-  meta: string;
+type Period = 'week' | 'month' | 'all';
+type Scope = 'friends' | 'city' | 'global';
+
+const PERIODS: { key: Period; label: string }[] = [
+  { key: 'week', label: 'This week' },
+  { key: 'month', label: 'This month' },
+  { key: 'all', label: 'All time' },
+];
+
+const SCOPES: { key: Scope; label: string }[] = [
+  { key: 'friends', label: 'Friends' },
+  { key: 'city', label: 'City' },
+  { key: 'global', label: 'Global' },
+];
+
+type Entry = {
+  rank: number;
+  name: string;
   points: number;
+  checkins: number;
+  isMe?: boolean;
 };
 
-const HISTORY: HistoryItem[] = [
-  { id: '1', venue: 'PCO Bar', meta: 'Last night, 10:30 PM', points: 15 },
-  { id: '2', venue: 'The Piano Man', meta: 'Friday, 11:45 PM', points: 20 },
-  { id: '3', venue: 'PCO Bar', meta: 'Last night, 10:30 PM', points: 15 },
-  { id: '4', venue: 'The Piano Man', meta: 'Friday, 11:45 PM', points: 20 },
-  { id: '5', venue: 'The Piano Man', meta: 'Friday, 11:45 PM', points: 20 },
+const ENTRIES: Entry[] = [
+  { rank: 1, name: 'Sneha A.', points: 5100, checkins: 28 },
+  { rank: 2, name: 'Rahul A.', points: 4200, checkins: 24 },
+  { rank: 3, name: 'Anonya H.', points: 1900, checkins: 16 },
+  { rank: 4, name: 'Manav J.', points: 980, checkins: 14 },
+  { rank: 5, name: 'Dev K.', points: 820, checkins: 12 },
+  { rank: 6, name: 'Aria L.', points: 540, checkins: 9 },
+  { rank: 7, name: 'You · Yashika', points: 2400, checkins: 11, isMe: true },
+  { rank: 8, name: 'Kabir M.', points: 480, checkins: 8 },
+  { rank: 9, name: 'Riya N.', points: 410, checkins: 7 },
+  { rank: 10, name: 'Aarav S.', points: 360, checkins: 6 },
 ];
+
+function formatPoints(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
+
+function initials(name: string): string {
+  const clean = name.replace(/^You\s*·\s*/, '');
+  const parts = clean.trim().split(/\s+/);
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+}
 
 export default function LeaderboardScreen() {
   const router = useRouter();
-  const progress = 8 / 15;
+  const [period, setPeriod] = useState<Period>('week');
+  const [scope, setScope] = useState<Scope>('friends');
+
+  const me = ENTRIES.find((e) => e.isMe);
+  const top3 = useMemo(() => ENTRIES.filter((e) => e.rank <= 3), []);
+  const rest = useMemo(
+    () => ENTRIES.filter((e) => e.rank > 3 && !e.isMe).slice(0, 6),
+    [],
+  );
+
+  const podiumOrder = [
+    top3.find((e) => e.rank === 2),
+    top3.find((e) => e.rank === 1),
+    top3.find((e) => e.rank === 3),
+  ].filter((x): x is Entry => !!x);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -38,75 +88,149 @@ export default function LeaderboardScreen() {
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.topTitle}>Leaderboard</Text>
-        <View style={styles.iconBtn} />
+        <TouchableOpacity activeOpacity={0.7}>
+          <Text style={styles.shareLink}>Share</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>42</Text>
-            <Text style={styles.statLabel}>TOTAL CHECK-INS</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>5 days</Text>
-            <Text style={styles.statLabel}>CURRENT STREAK</Text>
-          </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.pillRow}>
+          {PERIODS.map((p) => (
+            <TouchableOpacity
+              key={p.key}
+              style={[styles.pill, period === p.key && styles.pillActive]}
+              onPress={() => setPeriod(p.key)}
+              activeOpacity={0.85}>
+              <Text
+                style={[
+                  styles.pillText,
+                  period === p.key && styles.pillTextActive,
+                ]}>
+                {p.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.pillRow}>
+          {SCOPES.map((s) => (
+            <TouchableOpacity
+              key={s.key}
+              style={[styles.scopePill, scope === s.key && styles.scopePillActive]}
+              onPress={() => setScope(s.key)}
+              activeOpacity={0.85}>
+              <Text
+                style={[
+                  styles.scopePillText,
+                  scope === s.key && styles.scopePillTextActive,
+                ]}>
+                {s.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.podium}>
+          {podiumOrder.map((e) => {
+            const isFirst = e.rank === 1;
+            return (
+              <View
+                key={e.rank}
+                style={[styles.podiumCol, isFirst && styles.podiumColFirst]}>
+                {isFirst && (
+                  <View style={styles.crown}>
+                    <Ionicons name="trophy" size={16} color="#FFB300" />
+                  </View>
+                )}
+                <View
+                  style={[
+                    styles.podiumAvatar,
+                    isFirst && styles.podiumAvatarFirst,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.podiumInitials,
+                      isFirst && styles.podiumInitialsFirst,
+                    ]}>
+                    {initials(e.name)}
+                  </Text>
+                </View>
+                <Text
+                  style={[styles.podiumName, isFirst && styles.podiumNameFirst]}>
+                  {e.name}
+                </Text>
+                <Text
+                  style={[styles.podiumPts, isFirst && styles.podiumPtsFirst]}>
+                  {formatPoints(e.points)}
+                </Text>
+                <View
+                  style={[
+                    styles.podiumBlock,
+                    isFirst ? styles.podiumBlockFirst : null,
+                    e.rank === 2 ? styles.podiumBlockSecond : null,
+                    e.rank === 3 ? styles.podiumBlockThird : null,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.podiumRank,
+                      isFirst && styles.podiumRankFirst,
+                    ]}>
+                    {e.rank}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
         </View>
 
-        <View style={styles.progressCard}>
-          <Text style={styles.progressTitle}>Leaderboard Progress</Text>
-          <View style={styles.rankRow}>
-            <Text style={styles.rankLabel}>Rank #7</Text>
+        {me ? (
+          <View style={styles.youCard}>
+            <View style={styles.youRankPill}>
+              <Text style={styles.youRankText}>#{me.rank}</Text>
+            </View>
+            <View style={styles.youAvatar}>
+              <Text style={styles.youAvatarText}>YS</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.youName}>{me.name}</Text>
+              <Text style={styles.youMeta}>this period</Text>
+            </View>
+            <Text style={styles.youPoints}>{formatPoints(me.points)}</Text>
           </View>
-          <View style={styles.levelRow}>
-            <Text style={styles.levelLabel}>Level 4 Elite</Text>
-            <Text style={styles.levelCount}>8 / 15 check-ins</Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
-          <Text style={styles.progressNote}>
-            7 more check-ins to reach Level 5
-          </Text>
-        </View>
+        ) : null}
 
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <View style={styles.historyCard}>
-          {HISTORY.map((h, idx) => (
+        <View style={styles.listCard}>
+          {rest.map((e, idx) => (
             <View
-              key={h.id}
+              key={e.rank}
               style={[
-                styles.historyRow,
-                idx === HISTORY.length - 1 && { borderBottomWidth: 0 },
+                styles.row,
+                idx === rest.length - 1 && { borderBottomWidth: 0 },
               ]}>
-              <View style={styles.historyThumb} />
+              <Text style={styles.rank}>{e.rank}</Text>
+              <View style={styles.rowAvatar}>
+                <Text style={styles.rowAvatarText}>{initials(e.name)}</Text>
+              </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.historyVenue}>{h.venue}</Text>
-                <Text style={styles.historyMeta}>{h.meta}</Text>
+                <Text style={styles.rowName}>{e.name}</Text>
+                <Text style={styles.rowMeta}>{e.checkins} check-ins this week</Text>
               </View>
-              <View style={styles.pointsPill}>
-                <Text style={styles.pointsText}>+{h.points} pts</Text>
-              </View>
+              <Text style={styles.rowPoints}>{e.points.toLocaleString()}</Text>
             </View>
           ))}
         </View>
 
-        <TouchableOpacity style={styles.loadMoreBtn} activeOpacity={0.85}>
-          <Text style={styles.loadMoreText}>Load more history</Text>
+        <TouchableOpacity style={styles.expandBtn} activeOpacity={0.8}>
+          <Ionicons name="chevron-down" size={18} color="#000" />
         </TouchableOpacity>
-
-        <View style={styles.specialCard}>
-          <View style={styles.specialPill}>
-            <Text style={styles.specialPillText}>WEEKEND SPECIAL</Text>
-          </View>
-          <Text style={styles.specialTitle}>Double points at all Rooftops</Text>
-          <View style={styles.specialFooter}>
-            <Ionicons name="flash" size={12} color="#C4F27F" />
-            <Text style={styles.specialFooterText}>Active for 48h</Text>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -129,98 +253,209 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   topTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  shareLink: {
+    color: '#C4F27F',
+    fontSize: 13,
+    fontWeight: '700',
+    paddingHorizontal: 6,
+  },
   scroll: { paddingHorizontal: 18, paddingBottom: 40 },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 4,
+  pillRow: {
+    gap: 8,
+    paddingVertical: 6,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#141414',
-    borderRadius: 14,
-    padding: 16,
+  pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    backgroundColor: '#1a1a1a',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
   },
-  statValue: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  statLabel: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    marginTop: 4,
-  },
-  progressCard: {
-    marginTop: 14,
-    backgroundColor: '#141414',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  progressTitle: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 12,
-  },
-  rankRow: { marginBottom: 10 },
-  rankLabel: {
-    color: 'rgba(255,255,255,0.65)',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  levelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  levelLabel: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  levelCount: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 6,
+  pillActive: {
     backgroundColor: '#C4F27F',
+    borderColor: '#C4F27F',
   },
-  progressNote: {
-    color: 'rgba(255,255,255,0.4)',
+  pillText: {
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 11,
-    marginTop: 10,
+    fontWeight: '600',
   },
-  sectionTitle: {
+  pillTextActive: { color: '#000', fontWeight: '700' },
+  scopePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
+  },
+  scopePillActive: {
+    backgroundColor: 'rgba(196,242,127,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(196,242,127,0.45)',
+  },
+  scopePillText: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  scopePillTextActive: { color: '#C4F27F', fontWeight: '700' },
+  podium: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 18,
+    marginBottom: 6,
+    height: 220,
+  },
+  podiumCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  podiumColFirst: {
+    flex: 1.1,
+  },
+  crown: {
+    marginBottom: 4,
+  },
+  podiumAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  podiumAvatarFirst: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderColor: '#C4F27F',
+  },
+  podiumInitials: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '800',
-    marginTop: 22,
-    marginBottom: 10,
   },
-  historyCard: {
+  podiumInitialsFirst: {
+    color: '#C4F27F',
+    fontSize: 16,
+  },
+  podiumName: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  podiumNameFirst: {
+    color: '#C4F27F',
+    fontSize: 12,
+  },
+  podiumPts: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  podiumPtsFirst: {
+    color: '#C4F27F',
+    fontSize: 12,
+  },
+  podiumBlock: {
+    width: '100%',
+    marginTop: 10,
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  podiumBlockFirst: {
+    height: 80,
+    backgroundColor: 'rgba(196,242,127,0.18)',
+    borderColor: '#C4F27F',
+  },
+  podiumBlockSecond: {
+    height: 60,
+    backgroundColor: '#1a1a1a',
+  },
+  podiumBlockThird: {
+    height: 44,
+    backgroundColor: '#1a1a1a',
+  },
+  podiumRank: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  podiumRankFirst: {
+    color: '#C4F27F',
+    fontSize: 26,
+  },
+  youCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
+    backgroundColor: 'rgba(196,242,127,0.10)',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(196,242,127,0.4)',
+  },
+  youRankPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: 'rgba(196,242,127,0.4)',
+  },
+  youRankText: {
+    color: '#C4F27F',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  youAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#C4F27F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  youAvatarText: {
+    color: '#000',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  youName: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  youMeta: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  youPoints: {
+    color: '#C4F27F',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  listCard: {
+    marginTop: 14,
     backgroundColor: '#141414',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
   },
-  historyRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -229,86 +464,50 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  historyThumb: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  historyVenue: {
-    color: '#fff',
+  rank: {
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 13,
     fontWeight: '700',
+    width: 18,
   },
-  historyMeta: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  pointsPill: {
-    backgroundColor: '#C4F27F',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  pointsText: {
-    color: '#000',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  loadMoreBtn: {
-    marginTop: 12,
-    height: 44,
-    borderRadius: 12,
+  rowAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#1a1a1a',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadMoreText: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  specialCard: {
-    marginTop: 22,
-    backgroundColor: 'rgba(196,242,127,0.08)',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(196,242,127,0.3)',
-  },
-  specialPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#C4F27F',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  specialPillText: {
-    color: '#000',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  specialTitle: {
+  rowAvatarText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  specialFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
-  },
-  specialFooterText: {
-    color: '#C4F27F',
     fontSize: 11,
     fontWeight: '700',
+  },
+  rowName: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  rowMeta: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  rowPoints: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  expandBtn: {
+    alignSelf: 'center',
+    marginTop: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#C4F27F',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
